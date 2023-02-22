@@ -1,0 +1,41 @@
+trigger:
+  branches:
+    include:
+      - develop
+    exclude:
+      - main
+  paths:
+    include:
+      - valaxy-webapp-3/
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  solution:  '**/*.sln'
+
+steps:
+  - task: NuGetToolInstaller@1
+    displayName: 'Install Nuget'
+
+  - task: NuGetCommand@2
+    displayName: 'Restore NUGET'
+    inputs:
+      restoreSolution: '$(solution)'
+
+  - task: VSBuild@1
+    inputs:
+      solution: '$(solution)'
+      msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactstagingdirectory)\\"'
+
+  - task: CopyFiles@2
+    inputs:
+      SourceFolder: 'template/'
+      Contents: '**/*.json'
+      TargetFolder: '$(build.artifactstagingdirectory)'
+  
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(build.artifactstagingdirectory)'
+      ArtifactName: 'drop'
+      publishLocation: 'Container'
